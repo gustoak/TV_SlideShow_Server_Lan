@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TV Display</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;600&display=swap');
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;width:100vw;height:100vh;overflow:hidden;
+     font-family:'DM Sans',sans-serif;cursor:none;}
+
+#slideshow{position:fixed;inset:0;background:#000;}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease;
+  display:flex;align-items:center;justify-content:center;}
+.slide.active{opacity:1;}
+.slide img{width:100%;height:100%;object-fit:cover;display:block;}
+
+#empty-state{position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:#060608;}
+#empty-state .eicon{font-size:72px;margin-bottom:20px;opacity:.25;}
+#empty-state h2{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;
+  letter-spacing:5px;color:#2a2a2a;margin-bottom:6px;}
+#empty-state p{font-size:.75rem;color:#1e1e1e;letter-spacing:2.5px;text-transform:uppercase;}
+
+/* Progress */
+#progress-bar{position:fixed;bottom:0;left:0;height:3px;
+  background:rgba(255,255,255,.85);box-shadow:0 0 10px rgba(255,255,255,.4);z-index:50;}
+
+#counter{position:fixed;bottom:16px;right:22px;
+  font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:3px;
+  color:rgba(255,255,255,.28);z-index:50;}
+
+#speed-indicator{position:fixed;top:14px;left:18px;font-size:.65rem;
+  letter-spacing:2px;color:rgba(255,255,255,.15);z-index:50;text-transform:uppercase;}
+
+/* ALERT OVERLAY */
+#alert-overlay{position:fixed;inset:0;z-index:200;display:flex;
+  align-items:center;justify-content:center;pointer-events:none;
+  opacity:0;transition:opacity .4s ease;}
+#alert-overlay.visible{opacity:1;pointer-events:all;}
+
+#alert-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.84);backdrop-filter:blur(7px);}
+
+#alert-box{position:relative;z-index:1;max-width:840px;width:88%;
+  padding:52px 60px;background:linear-gradient(135deg,#0e0e10 0%,#191920 100%);
+  border:1px solid rgba(255,255,255,.07);border-top:3px solid #e8c84a;
+  box-shadow:0 40px 100px rgba(0,0,0,.85),0 0 0 1px rgba(232,200,74,.08);
+  transform:translateY(28px) scale(.97);
+  transition:transform .55s cubic-bezier(.22,1,.36,1);}
+#alert-overlay.visible #alert-box{transform:translateY(0) scale(1);}
+#alert-overlay.pinned #alert-box{border-top-color:#e8924a;}
+
+#alert-tag{font-family:'Bebas Neue',sans-serif;font-size:.68rem;letter-spacing:5px;
+  color:#e8c84a;margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+#alert-tag::before{content:'';display:inline-block;width:26px;height:2px;background:currentColor;}
+#alert-overlay.pinned #alert-tag{color:#e8924a;}
+
+#alert-tag .dot{width:8px;height:8px;border-radius:50%;background:currentColor;
+  animation:pulse 1.4s ease-in-out infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.55)}}
+
+#alert-message{font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(1.9rem,5vw,3.4rem);line-height:1.1;letter-spacing:2px;
+  color:#fff;margin-bottom:28px;}
+
+#alert-time{font-size:.72rem;letter-spacing:2px;color:rgba(255,255,255,.18);text-transform:uppercase;}
+
+/* Duration countdown bar */
+#dur-bar-wrap{margin-top:22px;height:3px;background:rgba(255,255,255,.07);
+  border-radius:2px;overflow:hidden;display:none;}
+#dur-bar{height:100%;background:#e8c84a;border-radius:2px;transition:width 1s linear;}
+#alert-overlay.pinned #dur-bar{background:#e8924a;}
+
+#pin-badge{display:none;margin-top:18px;font-size:.62rem;letter-spacing:3px;
+  text-transform:uppercase;color:#e8924a;}
+#alert-overlay.pinned #pin-badge{display:block;}
+
+#alert-close-btn{margin-top:26px;padding:11px 28px;background:transparent;
+  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.38);
+  font-family:'DM Sans',sans-serif;font-size:.72rem;letter-spacing:3px;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;}
+#alert-close-btn:hover{border-color:rgba(255,255,255,.38);color:rgba(255,255,255,.76);background:rgba(255,255,255,.04);}
+#alert-overlay.pinned #alert-close-btn{display:none;}
+</style>
+</head>
+<body>
+
+<div id="slideshow"></div>
+
+<div id="empty-state">
+  <div class="eicon">🖼️</div>
+  <h2>TV DISPLAY</h2>
+  <p>Add images from the control panel</p>
+</div>
+
+<div id="progress-bar"></div>
+<div id="counter"></div>
+<div id="speed-indicator"></div>
+
+<div id="alert-overlay">
+  <div id="alert-backdrop"></div>
+  <div id="alert-box">
+    <div id="alert-tag"><span class="dot"></span><span id="alert-tag-txt">Message</span></div>
+    <div id="alert-message"></div>
+    <div id="alert-time"></div>
+    <div id="dur-bar-wrap"><div id="dur-bar" style="width:100%"></div></div>
+    <div id="pin-badge">📌 Pinned — cancel from control panel</div>
+    <button id="alert-close-btn">Close · ESC</button>
+  </div>
+</div>
+
+<script>
+const IS_SERVER=(location.hostname!=='localhost'&&location.hostname!=='127.0.0.1'&&location.hostname!=='')||location.port==='8765';
+const BASE=IS_SERVER?`${location.protocol}//${location.host}`:null;
+function api(p){return fetch(BASE+p).then(r=>r.json()).catch(()=>null);}
+
+let images=[],current=0,interval=null,delay=5000;
+let progressAnim=null,alertVisible=false,slidesPaused=false;
+let alertAutoTimer=null,lastAlertId=-1;
+
+const slideshow=document.getElementById('slideshow');
+const emptyState=document.getElementById('empty-state');
+const progressBar=document.getElementById('progress-bar');
+const counterEl=document.getElementById('counter');
+const speedEl=document.getElementById('speed-indicator');
+const alertOverlay=document.getElementById('alert-overlay');
+const alertMsg=document.getElementById('alert-message');
+const alertTimeEl=document.getElementById('alert-time');
+const alertTagTxt=document.getElementById('alert-tag-txt');
+const closeBtn=document.getElementById('alert-close-btn');
+const durWrap=document.getElementById('dur-bar-wrap');
+const durBar=document.getElementById('dur-bar');
+const pinBadge=document.getElementById('pin-badge');
+
+function buildSlides(){
+  slideshow.innerHTML='';
+  if(!images.length){emptyState.style.display='flex';counterEl.textContent='';stopProgress();return;}
+  emptyState.style.display='none';
+  images.forEach((src,i)=>{
+    const s=document.createElement('div');
+    s.className='slide'+(i===current?' active':'');
+    const img=document.createElement('img');img.src=src;
+    s.appendChild(img);slideshow.appendChild(s);
+  });
+  updateCounter();startProgress();
+}
+
+function updateCounter(){counterEl.textContent=images.length?`${current+1} / ${images.length}`:'';}
+
+function goTo(i){
+  const slides=slideshow.querySelectorAll('.slide');
+  slides[current]?.classList.remove('active');
+  current=(i+images.length)%images.length;
+  slides[current]?.classList.add('active');
+  updateCounter();
+}
+
+function next(){goTo(current+1);}
+
+function startInterval(){
+  clearInterval(interval);
+  if(!images.length||slidesPaused) return;
+  interval=setInterval(()=>{if(!alertVisible)next();},delay);
+}
+
+function startProgress(){
+  stopProgress();
+  if(!images.length||alertVisible) return;
+  speedEl.textContent=`${(delay/1000).toFixed(0)}s`;
+  let start=null;
+  function tick(ts){
+    if(!start) start=ts;
+    const pct=Math.min(((ts-start)/delay)*100,100);
+    progressBar.style.width=pct+'%';
+    if(pct<100) progressAnim=requestAnimationFrame(tick);
+  }
+  progressAnim=requestAnimationFrame(tick);
+}
+
+function stopProgress(){
+  if(progressAnim) cancelAnimationFrame(progressAnim);
+  progressBar.style.width='0';
+}
+
+function applyAlert(data){
+  if(data.id!==undefined&&data.id===lastAlertId) return;
+  if(data.id!==undefined) lastAlertId=data.id;
+  if(!data.msg){hideAlert();return;}
+
+  const pinned=!!data.pinned;
+  const duration=parseInt(data.duration)||0;
+
+  alertMsg.textContent=data.msg;
+  alertTimeEl.textContent=data.ts||'';
+  alertTagTxt.textContent=pinned?'📌':'📣';
+  alertOverlay.classList.toggle('pinned',pinned);
+  alertOverlay.classList.add('visible');
+  alertVisible=true;
+
+  clearAlertAutoTimer();
+
+  if(!pinned&&duration>0){
+    durWrap.style.display='block';
+    durBar.style.transition='none';durBar.style.width='100%';
+    requestAnimationFrame(()=>{
+      durBar.style.transition=`width ${duration}s linear`;
+      durBar.style.width='0%';
+    });
+    alertAutoTimer=setTimeout(hideAlert,duration*1000);
+  } else {
+    durWrap.style.display='none';
+    durBar.style.width='100%';
+  }
+
+  stopProgress();clearInterval(interval);
+}
+
+function hideAlert(){
+  clearAlertAutoTimer();
+  alertOverlay.classList.remove('visible','pinned');
+  alertVisible=false;
+  startInterval();startProgress();
+}
+
+function clearAlertAutoTimer(){
+  if(alertAutoTimer){clearTimeout(alertAutoTimer);alertAutoTimer=null;}
+}
+
+closeBtn.addEventListener('click',hideAlert);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&alertVisible&&!alertOverlay.classList.contains('pinned')) hideAlert();
+});
+
+// SSE (network mode)
+function startSSE(){
+  const es=new EventSource(BASE+'/events');
+  es.addEventListener('images',()=>{
+    api('/api/images').then(r=>{
+      if(!r) return;
+      images=r.images;current=0;buildSlides();clearInterval(interval);startInterval();
+    });
+  });
+  es.addEventListener('delay',e=>{
+    delay=JSON.parse(e.data).delay;
+    speedEl.textContent=`${(delay/1000).toFixed(0)}s`;
+    clearInterval(interval);startInterval();
+  });
+  es.addEventListener('alert',e=>applyAlert(JSON.parse(e.data)));
+  es.addEventListener('command',e=>{
+    const {cmd}=JSON.parse(e.data);
+    if(cmd==='next'){next();startProgress();}
+    if(cmd==='prev'){goTo(current-1);startProgress();}
+    if(cmd==='pause'){slidesPaused=true;clearInterval(interval);stopProgress();}
+    if(cmd==='play'){slidesPaused=false;startInterval();startProgress();}
+  });
+  es.onerror=()=>{};
+}
+
+// Local mode polling
+function startLocalPolling(){
+  const si=localStorage.getItem('tv_images');
+  if(si){images=JSON.parse(si);}
+  const sd=localStorage.getItem('tv_delay');
+  if(sd) delay=parseInt(sd);
+  buildSlides();startInterval();
+
+  let lastAlertRaw=null;
+  window.addEventListener('storage',e=>{
+    if(e.key==='tv_images'){images=JSON.parse(e.newValue||'[]');current=0;buildSlides();clearInterval(interval);startInterval();}
+    if(e.key==='tv_delay'){delay=parseInt(e.newValue);clearInterval(interval);startInterval();}
+    if(e.key==='tv_alert'){applyAlert(JSON.parse(e.newValue||'{}'));}
+    if(e.key==='tv_command'){
+      const cmd=(e.newValue||'').split('_')[0];
+      if(cmd==='next'){next();startProgress();}
+      if(cmd==='prev'){goTo(current-1);startProgress();}
+      if(cmd==='pause'){slidesPaused=true;clearInterval(interval);stopProgress();}
+      if(cmd==='play'){slidesPaused=false;startInterval();startProgress();}
+    }
+  });
+  setInterval(()=>{
+    const raw=localStorage.getItem('tv_alert');
+    if(raw&&raw!==lastAlertRaw){lastAlertRaw=raw;applyAlert(JSON.parse(raw));}
+  },800);
+}
+
+if(IS_SERVER){
+  api('/api/images').then(r=>{if(r?.images){images=r.images;}buildSlides();startInterval();});
+  api('/api/state').then(r=>{
+    if(r?.delay){delay=r.delay;speedEl.textContent=`${(delay/1000).toFixed(0)}s`;}
+    if(r?.alert?.msg) applyAlert(r.alert);
+  });
+  startSSE();
+} else {
+  startLocalPolling();
+}
+</script>
+</body>
+</html>
