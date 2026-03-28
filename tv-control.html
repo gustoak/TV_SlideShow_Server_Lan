@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TV Control Panel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:#0b0b0d; --surface:#131317; --surface2:#1c1c22; --surface3:#242429;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --accent:#e8c84a; --accent-dim:rgba(232,200,74,0.13);
+  --red:#e8554a;   --red-dim:rgba(232,85,74,0.13);
+  --orange:#e8924a;--orange-dim:rgba(232,146,74,0.13);
+  --green:#4ae8a0; --green-dim:rgba(74,232,160,0.12);
+  --blue:#4a9fe8;  --blue-dim:rgba(74,159,232,0.12);
+  --text:#ececec;  --muted:#606068; --radius:12px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+     font-size:14px;min-height:100vh;padding:36px 20px;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:radial-gradient(circle at 20% 20%,rgba(232,200,74,.04) 0%,transparent 50%),
+                   radial-gradient(circle at 80% 80%,rgba(74,159,232,.03) 0%,transparent 50%);
+  pointer-events:none;z-index:0;}
+.container{max-width:980px;margin:0 auto;position:relative;z-index:1;}
+
+/* ── LANG PICKER ── */
+.lang-bar{display:flex;justify-content:flex-end;margin-bottom:20px;gap:6px;}
+.lang-btn{padding:5px 14px;border:1px solid var(--border);border-radius:20px;
+  background:var(--surface2);color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:.72rem;letter-spacing:1.5px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.lang-btn:hover{border-color:var(--border2);color:var(--text);}
+.lang-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+
+/* ── HEADER ── */
+header{display:flex;align-items:flex-end;justify-content:space-between;
+  margin-bottom:36px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:14px;}
+.logo-icon{width:44px;height:44px;background:var(--accent);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+h1{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:4px;}
+.subtitle{font-size:.68rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:3px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+
+#network-badge{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;
+  padding:6px 13px;border-radius:20px;border:1px solid var(--border);
+  color:var(--muted);background:var(--surface);display:flex;align-items:center;gap:6px;}
+#network-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+#network-badge.online .dot{background:var(--green);animation:blink 2s infinite;}
+#network-badge.online{color:var(--green);border-color:rgba(74,232,160,.25);}
+
+.open-tv-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;
+  background:var(--accent);color:#000;border:none;border-radius:var(--radius);
+  font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;text-decoration:none;
+  transition:all .2s;white-space:nowrap;}
+.open-tv-btn:hover{opacity:.85;transform:translateY(-1px);}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+@media(max-width:700px){.grid{grid-template-columns:1fr;}}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:26px;position:relative;overflow:hidden;}
+.card-accent-line{position:absolute;top:0;left:0;right:0;height:2px;}
+.card-accent-line.yellow{background:linear-gradient(90deg,transparent,rgba(232,200,74,.4),transparent);}
+.card-accent-line.red{background:linear-gradient(90deg,transparent,rgba(232,85,74,.4),transparent);}
+.card-accent-line.blue{background:linear-gradient(90deg,transparent,rgba(74,159,232,.3),transparent);}
+
+.card-label{font-size:.62rem;letter-spacing:4px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.card-label .num{color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;}
+
+/* ── UPLOAD ── */
+#drop-zone{border:2px dashed rgba(255,255,255,.1);border-radius:10px;
+  padding:32px 20px;text-align:center;cursor:pointer;transition:all .25s;}
+#drop-zone:hover,#drop-zone.dragover{border-color:var(--accent);background:var(--accent-dim);}
+#drop-zone .up-icon{font-size:34px;margin-bottom:10px;opacity:.45;}
+#drop-zone p{font-size:.8rem;color:var(--muted);line-height:1.7;}
+#drop-zone strong{color:var(--accent);font-weight:500;}
+#file-input{display:none;}
+
+/* ── IMAGE GRID ── */
+#image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
+  gap:7px;margin-top:18px;max-height:260px;overflow-y:auto;padding-right:3px;}
+#image-grid::-webkit-scrollbar{width:3px;}
+#image-grid::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
+
+.thumb-wrap{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;
+  background:var(--surface2);cursor:pointer;transition:transform .15s;}
+.thumb-wrap:hover{transform:scale(1.05);}
+.thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.thumb-wrap .t-remove{position:absolute;top:3px;right:3px;width:19px;height:19px;
+  background:rgba(0,0,0,.8);border:none;border-radius:50%;color:#fff;font-size:10px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;}
+.thumb-wrap .t-edit{position:absolute;bottom:3px;right:3px;width:19px;height:19px;
+  background:rgba(232,200,74,.9);border:none;border-radius:50%;color:#000;font-size:10px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;}
+.thumb-wrap:hover .t-remove,.thumb-wrap:hover .t-edit{opacity:1;}
+.thumb-wrap.edited::after{content:'✓';position:absolute;bottom:3px;left:3px;
+  background:var(--green);color:#000;font-size:8px;font-weight:700;
+  padding:1px 4px;border-radius:3px;}
+
+.img-count{margin-top:12px;font-size:.75rem;color:var(--muted);}
+
+/* ── RANGE ── */
+input[type="range"]{-webkit-appearance:none;width:100%;height:4px;
+  background:var(--surface2);border-radius:2px;outline:none;cursor:pointer;}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+  background:var(--accent);border-radius:50%;cursor:pointer;
+  box-shadow:0 0 0 4px var(--accent-dim);}
+
+.control-group{margin-bottom:22px;}
+.control-group:last-child{margin-bottom:0;}
+.control-label{font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:9px;display:flex;justify-content:space-between;align-items:center;}
+.control-label .val{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;
+  color:var(--accent);letter-spacing:2px;}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;}
+.btn{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:9px;
+  background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:.75rem;font-weight:500;letter-spacing:.5px;cursor:pointer;
+  transition:all .18s;display:flex;align-items:center;justify-content:center;
+  gap:5px;min-width:76px;}
+.btn:hover{background:rgba(255,255,255,.07);border-color:var(--border2);}
+.btn:active{transform:scale(.97);}
+.btn.accent{background:var(--accent-dim);border-color:rgba(232,200,74,.35);color:var(--accent);}
+.btn.accent:hover{background:rgba(232,200,74,.22);}
+.btn.danger{background:var(--red-dim);border-color:rgba(232,85,74,.3);color:var(--red);}
+.btn.danger:hover{background:rgba(232,85,74,.22);}
+
+/* ── ALERT MODULE ── */
+textarea{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:.9rem;line-height:1.6;padding:14px;resize:vertical;min-height:90px;
+  outline:none;transition:border-color .2s;}
+textarea:focus{border-color:rgba(232,85,74,.5);}
+textarea::placeholder{color:var(--muted);}
+
+.duration-row{display:flex;align-items:center;gap:10px;margin:12px 0 0;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:9px;padding:10px 13px;}
+.duration-row label{font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);flex-shrink:0;white-space:nowrap;}
+.duration-row input[type="range"]{flex:1;}
+.duration-val{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;
+  color:var(--accent);letter-spacing:2px;min-width:48px;text-align:right;}
+.pin-hint{font-size:.68rem;color:var(--muted);letter-spacing:.8px;margin-top:5px;padding-left:2px;}
+
+.alert-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:12px;}
+.alert-btn{padding:12px 6px;border:none;border-radius:9px;
+  font-family:'Bebas Neue',sans-serif;font-size:.88rem;letter-spacing:2px;
+  cursor:pointer;transition:all .2s;display:flex;flex-direction:column;
+  align-items:center;gap:4px;}
+.alert-btn .aicon{font-size:17px;line-height:1;}
+.alert-btn .albl{font-size:.6rem;letter-spacing:2px;}
+.alert-btn.asend{background:var(--red);color:#fff;}
+.alert-btn.asend:hover{background:#ff6055;box-shadow:0 5px 18px rgba(232,85,74,.35);transform:translateY(-1px);}
+.alert-btn.apin{background:var(--orange-dim);color:var(--orange);border:1px solid rgba(232,146,74,.3);}
+.alert-btn.apin:hover{background:rgba(232,146,74,.22);transform:translateY(-1px);}
+.alert-btn.apin.active{background:var(--orange);color:#000;}
+.alert-btn.acancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.alert-btn.acancel:hover{color:var(--text);border-color:var(--border2);transform:translateY(-1px);}
+
+#alert-status{margin-top:10px;padding:9px 13px;border-radius:9px;
+  background:var(--surface2);border:1px solid var(--border);
+  font-size:.7rem;letter-spacing:1.2px;color:var(--muted);
+  display:flex;align-items:center;gap:7px;min-height:34px;transition:all .3s;}
+#alert-status.live{border-color:rgba(232,85,74,.3);color:var(--red);background:var(--red-dim);}
+#alert-status.plive{border-color:rgba(232,146,74,.3);color:var(--orange);background:var(--orange-dim);}
+#alert-status .sdot{width:6px;height:6px;border-radius:50%;background:currentColor;
+  animation:blink 1s infinite;flex-shrink:0;display:inline-block;}
+
+.status-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.status-pill{font-size:.67rem;letter-spacing:1.5px;text-transform:uppercase;
+  padding:4px 11px;border-radius:20px;background:var(--surface2);
+  border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;gap:5px;}
+.status-pill .dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite;}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--surface);border:1px solid var(--border2);border-radius:30px;
+  padding:11px 22px;font-size:.78rem;letter-spacing:.5px;color:var(--text);
+  box-shadow:0 18px 48px rgba(0,0,0,.55);transition:transform .4s cubic-bezier(.22,1,.36,1);
+  z-index:9999;white-space:nowrap;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── NET INFO ── */
+.net-info{margin-top:18px;padding:14px 17px;background:var(--green-dim);
+  border:1px solid rgba(74,232,160,.2);border-radius:10px;
+  font-size:.76rem;color:var(--green);line-height:1.9;}
+.net-info strong{color:var(--green);}
+.net-info code{font-family:monospace;font-size:.83rem;color:var(--accent);
+  background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;}
+
+/* ── INSTRUCTIONS ── */
+.instructions{margin-top:24px;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:22px 26px;}
+.instructions h3{font-family:'Bebas Neue',sans-serif;font-size:1rem;
+  letter-spacing:3px;color:var(--muted);margin-bottom:14px;}
+.instructions ol{padding-left:17px;color:var(--muted);font-size:.78rem;line-height:2.1;}
+.instructions li strong{color:var(--accent);font-weight:500;}
+.instructions li.netli strong{color:var(--green);}
+
+/* ══════════════════════════════════════════
+   IMAGE EDITOR MODAL
+══════════════════════════════════════════ */
+#editor-modal{position:fixed;inset:0;z-index:1000;display:flex;
+  align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+#editor-modal.open{opacity:1;pointer-events:all;}
+#editor-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);}
+#editor-box{position:relative;z-index:1;width:min(860px,96vw);max-height:92vh;
+  background:var(--surface);border:1px solid var(--border2);border-radius:18px;
+  overflow:hidden;display:flex;flex-direction:column;
+  transform:scale(.96) translateY(20px);transition:transform .35s cubic-bezier(.22,1,.36,1);}
+#editor-modal.open #editor-box{transform:scale(1) translateY(0);}
+
+#editor-header{padding:18px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+#editor-header h2{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;}
+#editor-close{background:var(--surface2);border:1px solid var(--border);width:30px;height:30px;
+  border-radius:50%;color:var(--muted);cursor:pointer;font-size:14px;display:flex;
+  align-items:center;justify-content:center;transition:all .2s;}
+#editor-close:hover{color:var(--text);border-color:var(--border2);}
+
+#editor-body{display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;}
+@media(max-width:640px){#editor-body{grid-template-columns:1fr;}}
+
+/* Canvas area */
+#canvas-area{background:#0a0a0a;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;min-height:340px;}
+#editor-canvas{display:block;max-width:100%;max-height:100%;}
+#canvas-overlay{position:absolute;inset:0;pointer-events:none;}
+
+/* Controls panel */
+#editor-controls{background:var(--surface2);border-left:1px solid var(--border);
+  padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;}
+
+.ec-section{display:flex;flex-direction:column;gap:8px;}
+.ec-label{font-size:.62rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+.ec-val{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--accent);letter-spacing:1px;}
+
+/* Fit mode buttons */
+.fit-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.fit-btn{padding:9px 6px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:.7rem;letter-spacing:.5px;cursor:pointer;transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;}
+.fit-btn .ficon{font-size:16px;}
+.fit-btn:hover{border-color:var(--border2);color:var(--text);}
+.fit-btn.active{border-color:rgba(232,200,74,.5);background:var(--accent-dim);color:var(--accent);}
+
+/* Zoom + position */
+.ec-slider-row{display:flex;flex-direction:column;gap:6px;}
+.ec-slider-label{display:flex;justify-content:space-between;align-items:center;}
+
+/* BG color picker */
+.color-row{display:flex;gap:6px;flex-wrap:wrap;}
+.color-swatch{width:26px;height:26px;border-radius:6px;cursor:pointer;
+  border:2px solid transparent;transition:all .15s;flex-shrink:0;}
+.color-swatch.active{border-color:#fff;transform:scale(1.15);}
+.color-swatch.custom{background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);
+  display:flex;align-items:center;justify-content:center;font-size:11px;}
+input[type="color"]{opacity:0;position:absolute;width:0;height:0;}
+
+/* Preview ratio buttons */
+.ratio-row{display:flex;gap:5px;}
+.ratio-btn{flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:7px;
+  background:var(--surface);color:var(--muted);font-size:.65rem;letter-spacing:.5px;
+  cursor:pointer;transition:all .18s;text-align:center;}
+.ratio-btn:hover{border-color:var(--border2);color:var(--text);}
+.ratio-btn.active{border-color:rgba(232,200,74,.5);background:var(--accent-dim);color:var(--accent);}
+
+#editor-footer{padding:14px 20px;border-top:1px solid var(--border);
+  display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+.ef-btn{padding:10px 22px;border-radius:9px;font-family:'DM Sans',sans-serif;
+  font-size:.78rem;font-weight:500;letter-spacing:.5px;cursor:pointer;transition:all .2s;}
+.ef-btn.cancel{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.ef-btn.cancel:hover{color:var(--text);border-color:var(--border2);}
+.ef-btn.reset{background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+.ef-btn.reset:hover{color:var(--text);}
+.ef-btn.apply{background:var(--accent);border:none;color:#000;font-weight:600;}
+.ef-btn.apply:hover{opacity:.88;transform:translateY(-1px);}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Language bar -->
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('pt')" id="lb-pt">🇧🇷 PT</button>
+    <button class="lang-btn" onclick="setLang('fr')" id="lb-fr">🇫🇷 FR</button>
+    <button class="lang-btn" onclick="setLang('en')" id="lb-en">🇺🇸 EN</button>
+  </div>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📺</div>
+      <div>
+        <h1 data-i="title">TV Control</h1>
+        <div class="subtitle" data-i="subtitle">Painel de Controle</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="network-badge"><span class="dot"></span>&nbsp;<span id="net-label" data-i="local">local</span></div>
+      <a id="tv-link" href="tv-display.html" target="_blank" class="open-tv-btn" data-i="openTv">▶ Abrir TV</a>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- 01 IMAGES -->
+    <div class="card" style="grid-column:span 2">
+      <div class="card-accent-line yellow"></div>
+      <div class="card-label"><span class="num">01</span> <span data-i="sec1">Fotos do Slideshow</span></div>
+      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="up-icon">📂</div>
+        <p><strong data-i="dz1">Clique ou arraste</strong> <span data-i="dz2">imagens aqui</span><br>
+           <span data-i="dz3">JPG, PNG, GIF, WEBP — múltiplos arquivos</span></p>
+      </div>
+      <input type="file" id="file-input" accept="image/*" multiple>
+      <div id="image-grid"></div>
+      <div class="img-count" id="img-count" data-i="noImages">Nenhuma imagem carregada</div>
+    </div>
+
+    <!-- 02 TIMING -->
+    <div class="card">
+      <div class="card-accent-line yellow"></div>
+      <div class="card-label"><span class="num">02</span> <span data-i="sec2">Temporização</span></div>
+
+      <div class="control-group">
+        <div class="control-label"><span data-i="interval">Intervalo entre fotos</span>
+          <span class="val" id="delay-val">5s</span></div>
+        <input type="range" id="delay-slider" min="1" max="60" value="5">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label" data-i="playback">Controles de Reprodução</div>
+        <div class="btn-row">
+          <button class="btn" onclick="sendCmd('prev')">⏮ <span data-i="prev">Anterior</span></button>
+          <button class="btn accent" id="play-pause-btn" onclick="togglePlayPause()">⏸ <span id="pp-lbl" data-i="pause">Pausar</span></button>
+          <button class="btn" onclick="sendCmd('next')">⏭ <span data-i="next">Próximo</span></button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="btn-row">
+          <button class="btn danger" onclick="clearAll()">🗑 <span data-i="clearAll">Limpar Tudo</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 ALERT -->
+    <div class="card">
+      <div class="card-accent-line red"></div>
+      <div class="card-label"><span class="num">03</span> <span data-i="sec3">Mensagem de Alerta</span></div>
+
+      <textarea id="alert-input" data-ph="alertPh"></textarea>
+
+      <div class="duration-row">
+        <label data-i="duration">Duração</label>
+        <input type="range" id="duration-slider" min="0" max="120" value="0" step="5">
+        <div class="duration-val" id="duration-val">∞</div>
+      </div>
+      <div class="pin-hint" id="duration-hint" data-i="durationHintInf">Alerta ficará até ser cancelado manualmente</div>
+
+      <div class="alert-actions">
+        <button class="alert-btn asend" onclick="sendAlert(false)">
+          <span class="aicon">📣</span><span class="albl" data-i="send">Enviar</span>
+        </button>
+        <button class="alert-btn apin" id="pin-btn" onclick="sendAlert(true)">
+          <span class="aicon">📌</span><span class="albl" data-i="pin">Fixar</span>
+        </button>
+        <button class="alert-btn acancel" onclick="cancelAlert()">
+          <span class="aicon">✕</span><span class="albl" data-i="cancel">Cancelar</span>
+        </button>
+      </div>
+
+      <div id="alert-status" data-i="noAlert">Nenhum alerta ativo</div>
+
+      <div class="status-row">
+        <div class="status-pill"><span class="dot"></span><span id="mode-text" data-i="modeLocal">Modo local</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="instructions">
+    <h3 data-i="howTitle">Como Usar</h3>
+    <ol>
+      <li><strong data-i="hw1a">Abrir TV</strong> <span data-i="hw1b">para abrir a tela de exibição em outro monitor</span></li>
+      <li data-i="hw2">Arraste ou selecione fotos — aparecem automaticamente na TV</li>
+      <li><span data-i="hw3a">Clique em</span> ✏️ <span data-i="hw3b">em cada imagem para ajustar enquadramento, zoom e posição</span></li>
+      <li data-i="hw4">Ajuste o intervalo entre fotos com o slider</li>
+      <li><strong data-i="hw5a">Enviar</strong> — <span data-i="hw5b">exibe alerta por tempo definido e fecha sozinho</span></li>
+      <li><strong data-i="hw6a">Fixar</strong> — <span data-i="hw6b">alerta permanente, não fecha automaticamente</span></li>
+      <li><strong data-i="hw7a">Cancelar</strong> — <span data-i="hw7b">remove o alerta imediatamente da TV</span></li>
+      <li class="netli"><strong data-i="hw8a">Rede:</strong> <span data-i="hw8b">execute server.py e acesse pelo IP mostrado no terminal</span></li>
+    </ol>
+    <div class="net-info" id="net-info" style="display:none">
+      <strong>🌐 <span data-i="serverDetected">Servidor detectado!</span></strong><br>
+      <span data-i="otherDevices">Outros dispositivos na rede podem acessar:</span><br>
+      <span data-i="panel">Painel</span> → <code id="server-url-control"></code><br>
+      TV Display → <code id="server-url-tv"></code>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div id="toast">✓</div>
+
+<!-- ════════════════════════════════════════
+     IMAGE EDITOR MODAL
+════════════════════════════════════════ -->
+<div id="editor-modal">
+  <div id="editor-backdrop" onclick="closeEditor()"></div>
+  <div id="editor-box">
+    <div id="editor-header">
+      <h2 data-i="editorTitle">Editor de Enquadramento</h2>
+      <button id="editor-close" onclick="closeEditor()">✕</button>
+    </div>
+    <div id="editor-body">
+      <div id="canvas-area">
+        <canvas id="editor-canvas"></canvas>
+      </div>
+      <div id="editor-controls">
+
+        <!-- Preview ratio -->
+        <div class="ec-section">
+          <div class="ec-label" data-i="ecRatio">Proporção de Pré-visualização</div>
+          <div class="ratio-row">
+            <button class="ratio-btn active" data-ratio="16/9" onclick="setRatio(this,'16/9')">16:9</button>
+            <button class="ratio-btn" data-ratio="4/3" onclick="setRatio(this,'4/3')">4:3</button>
+            <button class="ratio-btn" data-ratio="1/1" onclick="setRatio(this,'1/1')">1:1</button>
+          </div>
+        </div>
+
+        <!-- Fit mode -->
+        <div class="ec-section">
+          <div class="ec-label" data-i="ecFit">Modo de Ajuste</div>
+          <div class="fit-grid">
+            <button class="fit-btn active" data-fit="cover" onclick="setFit(this,'cover')">
+              <span class="ficon">⬛</span><span data-i="fitCover">Preencher</span>
+            </button>
+            <button class="fit-btn" data-fit="contain" onclick="setFit(this,'contain')">
+              <span class="ficon">🔲</span><span data-i="fitContain">Caber</span>
+            </button>
+            <button class="fit-btn" data-fit="stretch" onclick="setFit(this,'stretch')">
+              <span class="ficon">↔️</span><span data-i="fitStretch">Esticar</span>
+            </button>
+            <button class="fit-btn" data-fit="original" onclick="setFit(this,'original')">
+              <span class="ficon">🖼️</span><span data-i="fitOriginal">Original</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Zoom -->
+        <div class="ec-section">
+          <div class="ec-label">
+            <span data-i="ecZoom">Zoom</span>
+            <span class="ec-val" id="zoom-val">100%</span>
+          </div>
+          <div class="ec-slider-row">
+            <input type="range" id="zoom-slider" min="10" max="300" value="100" step="1">
+          </div>
+        </div>
+
+        <!-- Position X -->
+        <div class="ec-section">
+          <div class="ec-label">
+            <span data-i="ecPosX">Posição X</span>
+            <span class="ec-val" id="posx-val">0</span>
+          </div>
+          <input type="range" id="posx-slider" min="-100" max="100" value="0" step="1">
+        </div>
+
+        <!-- Position Y -->
+        <div class="ec-section">
+          <div class="ec-label">
+            <span data-i="ecPosY">Posição Y</span>
+            <span class="ec-val" id="posy-val">0</span>
+          </div>
+          <input type="range" id="posy-slider" min="-100" max="100" value="0" step="1">
+        </div>
+
+        <!-- Background color (for contain/original modes) -->
+        <div class="ec-section" id="bg-section">
+          <div class="ec-label" data-i="ecBg">Cor de Fundo</div>
+          <div class="color-row" id="color-swatches">
+            <div class="color-swatch active" style="background:#000000" data-color="#000000" onclick="setBgColor('#000000',this)"></div>
+            <div class="color-swatch" style="background:#1a1a2e" data-color="#1a1a2e" onclick="setBgColor('#1a1a2e',this)"></div>
+            <div class="color-swatch" style="background:#ffffff" data-color="#ffffff" onclick="setBgColor('#ffffff',this)"></div>
+            <div class="color-swatch" style="background:#1e3a2f" data-color="#1e3a2f" onclick="setBgColor('#1e3a2f',this)"></div>
+            <div class="color-swatch" style="background:#2d1b4e" data-color="#2d1b4e" onclick="setBgColor('#2d1b4e',this)"></div>
+            <div class="color-swatch custom" onclick="document.getElementById('custom-color').click()">+
+              <input type="color" id="custom-color" onchange="setBgColor(this.value,null)">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div id="editor-footer">
+      <button class="ef-btn cancel" onclick="closeEditor()" data-i="efCancel">Cancelar</button>
+      <button class="ef-btn reset" onclick="resetEditor()" data-i="efReset">Resetar</button>
+      <button class="ef-btn apply" onclick="applyEdit()" data-i="efApply">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+//  i18n
+// ════════════════════════════════════════
+const LANGS = {
+  pt:{
+    title:'TV Control',subtitle:'Painel de Controle',local:'local',openTv:'▶ Abrir TV',
+    sec1:'Fotos do Slideshow',dz1:'Clique ou arraste',dz2:'imagens aqui',
+    dz3:'JPG, PNG, GIF, WEBP — múltiplos arquivos',noImages:'Nenhuma imagem carregada',
+    sec2:'Temporização',interval:'Intervalo entre fotos',playback:'Controles de Reprodução',
+    prev:'Anterior',pause:'Pausar',play:'Reproduzir',next:'Próximo',clearAll:'Limpar Tudo',
+    sec3:'Mensagem de Alerta',alertPh:'Digite a mensagem que aparecerá na TV em destaque…',
+    duration:'Duração',durationHintInf:'Alerta ficará até ser cancelado manualmente',
+    durationHintSec:'Alerta fechará automaticamente após {s} segundos',
+    send:'Enviar',pin:'Fixar',cancel:'Cancelar',noAlert:'Nenhum alerta ativo',
+    modeLocal:'Modo local',modeNet:'Modo rede — servidor ativo',
+    howTitle:'Como Usar',
+    hw1a:'Abrir TV',hw1b:'para abrir a tela de exibição em outro monitor',
+    hw2:'Arraste ou selecione fotos — aparecem automaticamente na TV',
+    hw3a:'Clique em',hw3b:'em cada imagem para ajustar enquadramento, zoom e posição',
+    hw4:'Ajuste o intervalo entre fotos com o slider',
+    hw5a:'Enviar',hw5b:'exibe alerta por tempo definido e fecha sozinho',
+    hw6a:'Fixar',hw6b:'alerta permanente, não fecha automaticamente',
+    hw7a:'Cancelar',hw7b:'remove o alerta imediatamente da TV',
+    hw8a:'Rede:',hw8b:'execute server.py e acesse pelo IP mostrado no terminal',
+    serverDetected:'Servidor detectado!',otherDevices:'Outros dispositivos na rede podem acessar:',panel:'Painel',
+    netActive:'rede ativa',
+    editorTitle:'Editor de Enquadramento',
+    ecRatio:'Proporção de Pré-visualização',ecFit:'Modo de Ajuste',
+    fitCover:'Preencher',fitContain:'Caber',fitStretch:'Esticar',fitOriginal:'Original',
+    ecZoom:'Zoom',ecPosX:'Posição X',ecPosY:'Posição Y',ecBg:'Cor de Fundo',
+    efCancel:'Cancelar',efReset:'Resetar',efApply:'Aplicar',
+    toastImgs:'imagem(s) enviada(s) 📷',toastRemoved:'Imagem removida',toastCleared:'Slideshow limpo',
+    toastDelay:'Intervalo:',toastPaused:'Pausado',toastPlaying:'Reproduzindo',
+    toastAlert:'📣 Alerta enviado para TV',toastPinned:'📌 Alerta fixado na TV',
+    toastCancelled:'✕ Alerta cancelado na TV',toastApplied:'✓ Enquadramento aplicado',
+    alertLive:'📣 Ao vivo',alertFixed:'📌 Fixado',alertClosesSec:'fecha em',
+    noMsgWarning:'Digite uma mensagem primeiro',
+  },
+  fr:{
+    title:'TV Control',subtitle:'Panneau de Contrôle',local:'local',openTv:'▶ Ouvrir TV',
+    sec1:'Photos du Diaporama',dz1:'Cliquez ou glissez',dz2:'des images ici',
+    dz3:'JPG, PNG, GIF, WEBP — plusieurs fichiers',noImages:'Aucune image chargée',
+    sec2:'Minuterie',interval:'Intervalle entre photos',playback:'Contrôles de Lecture',
+    prev:'Précédent',pause:'Pause',play:'Lire',next:'Suivant',clearAll:'Tout effacer',
+    sec3:"Message d'Alerte",alertPh:"Saisissez le message qui apparaîtra sur la TV…",
+    duration:'Durée',durationHintInf:"L'alerte restera jusqu'à annulation manuelle",
+    durationHintSec:"L'alerte se fermera automatiquement après {s} secondes",
+    send:'Envoyer',pin:'Épingler',cancel:'Annuler',noAlert:'Aucune alerte active',
+    modeLocal:'Mode local',modeNet:'Mode réseau — serveur actif',
+    howTitle:'Comment Utiliser',
+    hw1a:'Ouvrir TV',hw1b:"pour ouvrir l'écran d'affichage sur un autre moniteur",
+    hw2:"Glissez ou sélectionnez des photos — elles apparaissent automatiquement sur la TV",
+    hw3a:'Cliquez sur',hw3b:'sur chaque image pour ajuster le cadrage, le zoom et la position',
+    hw4:"Ajustez l'intervalle avec le curseur",
+    hw5a:'Envoyer',hw5b:"affiche l'alerte pendant le temps défini et se ferme",
+    hw6a:'Épingler',hw6b:"alerte permanente, ne se ferme pas automatiquement",
+    hw7a:'Annuler',hw7b:"supprime immédiatement l'alerte de la TV",
+    hw8a:'Réseau:',hw8b:"exécutez server.py et accédez via l'IP affichée dans le terminal",
+    serverDetected:'Serveur détecté!',otherDevices:'Les autres appareils du réseau peuvent accéder:',panel:'Panneau',
+    netActive:'réseau actif',
+    editorTitle:'Éditeur de Cadrage',
+    ecRatio:'Proportion de Prévisualisation',ecFit:"Mode d'Ajustement",
+    fitCover:'Remplir',fitContain:'Contenir',fitStretch:'Étirer',fitOriginal:'Original',
+    ecZoom:'Zoom',ecPosX:'Position X',ecPosY:'Position Y',ecBg:'Couleur de Fond',
+    efCancel:'Annuler',efReset:'Réinitialiser',efApply:'Appliquer',
+    toastImgs:'image(s) envoyée(s) 📷',toastRemoved:'Image supprimée',toastCleared:'Diaporama effacé',
+    toastDelay:'Intervalle:',toastPaused:'En pause',toastPlaying:'Lecture',
+    toastAlert:'📣 Alerte envoyée à la TV',toastPinned:'📌 Alerte épinglée sur la TV',
+    toastCancelled:"✕ Alerte annulée sur la TV",toastApplied:'✓ Cadrage appliqué',
+    alertLive:'📣 En direct',alertFixed:'📌 Épinglé',alertClosesSec:'ferme dans',
+    noMsgWarning:'Saisissez un message d\'abord',
+  },
+  en:{
+    title:'TV Control',subtitle:'Control Panel',local:'local',openTv:'▶ Open TV',
+    sec1:'Slideshow Photos',dz1:'Click or drag',dz2:'images here',
+    dz3:'JPG, PNG, GIF, WEBP — multiple files',noImages:'No images loaded',
+    sec2:'Timing',interval:'Interval between photos',playback:'Playback Controls',
+    prev:'Previous',pause:'Pause',play:'Play',next:'Next',clearAll:'Clear All',
+    sec3:'Alert Message',alertPh:'Type the message that will appear on the TV…',
+    duration:'Duration',durationHintInf:'Alert will stay until manually cancelled',
+    durationHintSec:'Alert will close automatically after {s} seconds',
+    send:'Send',pin:'Pin',cancel:'Cancel',noAlert:'No active alert',
+    modeLocal:'Local mode',modeNet:'Network mode — server active',
+    howTitle:'How to Use',
+    hw1a:'Open TV',hw1b:'to open the display screen on another monitor',
+    hw2:'Drag or select photos — they appear automatically on the TV',
+    hw3a:'Click',hw3b:'on each image to adjust framing, zoom and position',
+    hw4:'Adjust the interval between photos with the slider',
+    hw5a:'Send',hw5b:'displays alert for defined time and closes automatically',
+    hw6a:'Pin',hw6b:'permanent alert, never closes automatically',
+    hw7a:'Cancel',hw7b:'removes the alert immediately from the TV',
+    hw8a:'Network:',hw8b:'run server.py and access via the IP shown in the terminal',
+    serverDetected:'Server detected!',otherDevices:'Other network devices can access:',panel:'Panel',
+    netActive:'network active',
+    editorTitle:'Framing Editor',
+    ecRatio:'Preview Ratio',ecFit:'Fit Mode',
+    fitCover:'Fill',fitContain:'Fit',fitStretch:'Stretch',fitOriginal:'Original',
+    ecZoom:'Zoom',ecPosX:'Position X',ecPosY:'Position Y',ecBg:'Background Color',
+    efCancel:'Cancel',efReset:'Reset',efApply:'Apply',
+    toastImgs:'image(s) uploaded 📷',toastRemoved:'Image removed',toastCleared:'Slideshow cleared',
+    toastDelay:'Interval:',toastPaused:'Paused',toastPlaying:'Playing',
+    toastAlert:'📣 Alert sent to TV',toastPinned:'📌 Alert pinned on TV',
+    toastCancelled:'✕ Alert cancelled on TV',toastApplied:'✓ Framing applied',
+    alertLive:'📣 Live',alertFixed:'📌 Pinned',alertClosesSec:'closes in',
+    noMsgWarning:'Please type a message first',
+  }
+};
+
+let lang = localStorage.getItem('tv_lang') || 'pt';
+function t(k){ return (LANGS[lang]||LANGS.pt)[k] || k; }
+
+function setLang(l){
+  lang = l; localStorage.setItem('tv_lang', l);
+  ['lb-pt','lb-fr','lb-en'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('lb-' + l).classList.add('active');
+  applyTranslations();
+}
+
+function applyTranslations(){
+  document.querySelectorAll('[data-i]').forEach(el => {
+    const k = el.getAttribute('data-i');
+    el.textContent = t(k);
+  });
+  // Placeholders
+  document.querySelectorAll('[data-ph]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-ph'));
+  });
+  // Play/pause button label
+  const ppLbl = document.getElementById('pp-lbl');
+  if(ppLbl) ppLbl.textContent = paused ? t('play') : t('pause');
+  // Alert status if no alert
+  const as = document.getElementById('alert-status');
+  if(as && !as.classList.contains('live') && !as.classList.contains('plive'))
+    as.textContent = t('noAlert');
+  // Duration hint
+  updateDurationHint();
+  // img count
+  renderThumbs();
+}
+
+// ════════════════════════════════════════
+//  NETWORK DETECTION
+// ════════════════════════════════════════
+const IS_SERVER = (location.hostname !== 'localhost' &&
+                   location.hostname !== '127.0.0.1' &&
+                   location.hostname !== '') ||
+                   location.port === '8765';
+const BASE = IS_SERVER ? `${location.protocol}//${location.host}` : null;
+
+function api(path, method='GET', body=null){
+  if(!IS_SERVER) return Promise.resolve(null);
+  const o={method,headers:{'Content-Type':'application/json'}};
+  if(body) o.body=JSON.stringify(body);
+  return fetch(BASE+path,o).then(r=>r.json()).catch(()=>null);
+}
+
+// ════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════
+let images=[]; // [{src, edited, fitMode, zoom, posX, posY, bgColor, exportSrc}]
+let delay=5000, paused=false, alertCountdown=null;
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+function init(){
+  // Apply active lang button
+  document.getElementById('lb-'+lang).classList.add('active');
+  ['lb-pt','lb-fr','lb-en'].filter(id=>id!=='lb-'+lang)
+    .forEach(id=>document.getElementById(id).classList.remove('active'));
+
+  if(IS_SERVER){
+    const badge=document.getElementById('network-badge');
+    badge.classList.add('online');
+    document.getElementById('net-label').textContent=t('netActive');
+    document.getElementById('mode-text').textContent=t('modeNet');
+    document.getElementById('tv-link').href=BASE+'/tv';
+    document.getElementById('net-info').style.display='block';
+    document.getElementById('server-url-control').textContent=BASE+'/control';
+    document.getElementById('server-url-tv').textContent=BASE+'/tv';
+    api('/api/images').then(r=>{ if(r?.images){ images=r.images.map(s=>({src:s,exportSrc:s})); renderThumbs(); }});
+    startSSE();
+  } else {
+    const si=localStorage.getItem('tv_images');
+    if(si){
+      const raw=JSON.parse(si);
+      images=raw.map(item=> typeof item==='string'
+        ? {src:item,exportSrc:item}
+        : item);
+      renderThumbs();
+    }
+    const sd=localStorage.getItem('tv_delay');
+    if(sd) applyDelay(parseInt(sd));
+  }
+  applyTranslations();
+}
+
+function startSSE(){
+  const es=new EventSource(BASE+'/events');
+  es.addEventListener('delay', e=>applyDelay(JSON.parse(e.data).delay));
+  es.onerror=()=>{};
+}
+
+// ════════════════════════════════════════
+//  FILES
+// ════════════════════════════════════════
+const fileInput=document.getElementById('file-input');
+const dropZone=document.getElementById('drop-zone');
+
+fileInput.addEventListener('change', e=>handleFiles(e.target.files));
+dropZone.addEventListener('dragover', e=>{e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e=>{
+  e.preventDefault();dropZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files){
+  const arr=Array.from(files).filter(f=>f.type.startsWith('image/'));
+  let done=0;
+  if(!arr.length) return;
+  arr.forEach(file=>{
+    const r=new FileReader();
+    r.onload=ev=>{
+      images.push({src:ev.target.result, exportSrc:ev.target.result,
+                   edited:false, fitMode:'cover', zoom:100, posX:0, posY:0, bgColor:'#000000'});
+      if(++done===arr.length){ saveImages(); renderThumbs(); }
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+function saveImages(){
+  const exports=images.map(im=>im.exportSrc||im.src);
+  if(IS_SERVER){
+    api('/api/images','POST',{images:exports}).then(()=>toast(exports.length+' '+t('toastImgs')));
+  } else {
+    // Save full image objects (with edit params) for editor persistence
+    localStorage.setItem('tv_images_data', JSON.stringify(images));
+    localStorage.setItem('tv_images', JSON.stringify(exports));
+    toast(exports.length+' '+t('toastImgs'));
+  }
+}
+
+function renderThumbs(){
+  const grid=document.getElementById('image-grid');
+  grid.innerHTML='';
+  images.forEach((im,i)=>{
+    const w=document.createElement('div');
+    w.className='thumb-wrap'+(im.edited?' edited':'');
+    const img=document.createElement('img'); img.src=im.exportSrc||im.src;
+    const br=document.createElement('button'); br.className='t-remove'; br.textContent='×';
+    br.title='Remove'; br.onclick=ev=>{ev.stopPropagation();removeImage(i);};
+    const be=document.createElement('button'); be.className='t-edit'; be.textContent='✏';
+    be.title='Edit framing'; be.onclick=ev=>{ev.stopPropagation();openEditor(i);};
+    w.appendChild(img); w.appendChild(br); w.appendChild(be);
+    grid.appendChild(w);
+  });
+  const cnt=document.getElementById('img-count');
+  cnt.textContent=images.length===0 ? t('noImages')
+    : `${images.length} imagem${images.length>1?'s':''} / image${images.length>1?'s':''}`;
+}
+
+function removeImage(i){
+  images.splice(i,1); saveImages(); renderThumbs(); toast(t('toastRemoved'));
+}
+
+function clearAll(){
+  if(!confirm(t('clearAll')+'?')) return;
+  images=[]; saveImages(); renderThumbs(); toast(t('toastCleared'));
+}
+
+// ════════════════════════════════════════
+//  DELAY
+// ════════════════════════════════════════
+document.getElementById('delay-slider').addEventListener('input',function(){
+  delay=parseInt(this.value)*1000; applyDelay(delay);
+  if(IS_SERVER) api('/api/delay','POST',{delay});
+  else localStorage.setItem('tv_delay',delay);
+  toast(t('toastDelay')+' '+(delay/1000)+'s');
+});
+
+function applyDelay(ms){
+  delay=ms;
+  document.getElementById('delay-slider').value=ms/1000;
+  document.getElementById('delay-val').textContent=(ms/1000)+'s';
+}
+
+// ════════════════════════════════════════
+//  PLAYBACK
+// ════════════════════════════════════════
+function togglePlayPause(){
+  paused=!paused;
+  const btn=document.getElementById('play-pause-btn');
+  const lbl=document.getElementById('pp-lbl');
+  if(paused){ lbl.textContent=t('play'); btn.classList.remove('accent'); sendCmd('pause'); toast(t('toastPaused')); }
+  else       { lbl.textContent=t('pause'); btn.classList.add('accent'); sendCmd('play'); toast(t('toastPlaying')); }
+}
+
+function sendCmd(cmd){
+  if(IS_SERVER) api('/api/command','POST',{cmd});
+  else localStorage.setItem('tv_command',cmd+'_'+Date.now());
+}
+
+// ════════════════════════════════════════
+//  DURATION SLIDER
+// ════════════════════════════════════════
+document.getElementById('duration-slider').addEventListener('input', updateDurationHint);
+
+function updateDurationHint(){
+  const v=parseInt(document.getElementById('duration-slider').value);
+  const dv=document.getElementById('duration-val');
+  const dh=document.getElementById('duration-hint');
+  if(v===0){ dv.textContent='∞'; dh.textContent=t('durationHintInf'); }
+  else { dv.textContent=v+'s'; dh.textContent=(t('durationHintSec')||'').replace('{s}',v); }
+}
+
+// ════════════════════════════════════════
+//  ALERT
+// ════════════════════════════════════════
+function sendAlert(pin){
+  const msg=document.getElementById('alert-input').value.trim();
+  if(!msg){ toast('⚠ '+t('noMsgWarning')); return; }
+  const duration=parseInt(document.getElementById('duration-slider').value);
+  const ts=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const payload={msg,ts,duration,pinned:pin};
+  if(IS_SERVER){
+    api('/api/alert','POST',payload).then(()=>{ setAlertStatus(msg,pin,duration); toast(pin?t('toastPinned'):t('toastAlert')); });
+  } else {
+    localStorage.setItem('tv_alert',JSON.stringify(payload));
+    setAlertStatus(msg,pin,duration); toast(pin?t('toastPinned'):t('toastAlert'));
+  }
+}
+
+function cancelAlert(){
+  clearCountdown();
+  if(IS_SERVER){
+    api('/api/alert/clear','POST').then(()=>{ clearAlertStatus(); toast(t('toastCancelled')); });
+  } else {
+    localStorage.setItem('tv_alert',JSON.stringify({msg:'',ts:'',duration:0,pinned:false,id:Date.now()}));
+    clearAlertStatus(); toast(t('toastCancelled'));
+  }
+}
+
+function setAlertStatus(msg,pin,duration){
+  document.getElementById('pin-btn').classList.toggle('active',pin);
+  const el=document.getElementById('alert-status');
+  const short=msg.length>36?msg.slice(0,36)+'…':msg;
+  const lbl=pin?t('alertFixed'):t('alertLive');
+  el.className=pin?'plive':'live';
+  clearCountdown();
+  if(!pin&&duration>0){
+    let rem=duration;
+    const upd=()=>{ el.innerHTML=`<span class="sdot"></span>${lbl} · "${short}" · ${t('alertClosesSec')} ${rem}s`; };
+    upd();
+    alertCountdown=setInterval(()=>{ rem--; if(rem<=0){clearCountdown();clearAlertStatus();}else upd(); },1000);
+  } else {
+    el.innerHTML=`<span class="sdot"></span>${lbl} · "${short}"`;
+  }
+}
+
+function clearAlertStatus(){
+  const el=document.getElementById('alert-status');
+  el.className=''; el.textContent=t('noAlert');
+  document.getElementById('pin-btn').classList.remove('active');
+}
+
+function clearCountdown(){
+  if(alertCountdown){clearInterval(alertCountdown);alertCountdown=null;}
+}
+
+// ════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ════════════════════════════════════════
+//  IMAGE EDITOR
+// ════════════════════════════════════════
+let editIdx=-1, editImg=null;
+let edFit='cover', edZoom=100, edPosX=0, edPosY=0, edBg='#000000';
+let edRatioW=16, edRatioH=9;
+let edCanvas, edCtx;
+
+function openEditor(i){
+  editIdx=i;
+  const im=images[i];
+  edFit=im.fitMode||'cover';
+  edZoom=im.zoom||100;
+  edPosX=im.posX||0;
+  edPosY=im.posY||0;
+  edBg=im.bgColor||'#000000';
+
+  // Load image
+  editImg=new Image();
+  editImg.onload=()=>{
+    setupCanvas();
+    syncEditorUI();
+    drawPreview();
+  };
+  editImg.src=im.src; // always edit from original
+
+  document.getElementById('editor-modal').classList.add('open');
+}
+
+function closeEditor(){
+  document.getElementById('editor-modal').classList.remove('open');
+  editImg=null; editIdx=-1;
+}
+
+function setupCanvas(){
+  edCanvas=document.getElementById('editor-canvas');
+  edCtx=edCanvas.getContext('2d');
+  const area=document.getElementById('canvas-area');
+  const aW=area.clientWidth||600, aH=area.clientHeight||340;
+  // Set canvas to match preview ratio, fit inside area
+  const ratio=edRatioW/edRatioH;
+  let cW=aW-20, cH=cW/ratio;
+  if(cH>aH-20){ cH=aH-20; cW=cH*ratio; }
+  edCanvas.width=Math.round(cW);
+  edCanvas.height=Math.round(cH);
+}
+
+function syncEditorUI(){
+  // Fit buttons
+  document.querySelectorAll('.fit-btn').forEach(b=>b.classList.toggle('active',b.dataset.fit===edFit));
+  // Sliders
+  document.getElementById('zoom-slider').value=edZoom;
+  document.getElementById('posx-slider').value=edPosX;
+  document.getElementById('posy-slider').value=edPosY;
+  document.getElementById('zoom-val').textContent=edZoom+'%';
+  document.getElementById('posx-val').textContent=edPosX;
+  document.getElementById('posy-val').textContent=edPosY;
+  // BG swatches
+  document.querySelectorAll('.color-swatch[data-color]').forEach(s=>{
+    s.classList.toggle('active',s.dataset.color===edBg);
+  });
+}
+
+function drawPreview(){
+  if(!edCtx||!editImg) return;
+  const cW=edCanvas.width, cH=edCanvas.height;
+  const iW=editImg.naturalWidth, iH=editImg.naturalHeight;
+
+  edCtx.clearRect(0,0,cW,cH);
+  edCtx.fillStyle=edBg;
+  edCtx.fillRect(0,0,cW,cH);
+
+  const zoom=edZoom/100;
+  const offX=(edPosX/100)*cW;
+  const offY=(edPosY/100)*cH;
+
+  let dw,dh,dx,dy;
+
+  if(edFit==='stretch'){
+    dw=cW*zoom; dh=cH*zoom;
+    dx=(cW-dw)/2+offX; dy=(cH-dh)/2+offY;
+  } else if(edFit==='contain'){
+    const scale=Math.min(cW/iW, cH/iH)*zoom;
+    dw=iW*scale; dh=iH*scale;
+    dx=(cW-dw)/2+offX; dy=(cH-dh)/2+offY;
+  } else if(edFit==='original'){
+    dw=iW*zoom; dh=iH*zoom;
+    dx=(cW-dw)/2+offX; dy=(cH-dh)/2+offY;
+  } else { // cover
+    const scale=Math.max(cW/iW, cH/iH)*zoom;
+    dw=iW*scale; dh=iH*scale;
+    dx=(cW-dw)/2+offX; dy=(cH-dh)/2+offY;
+  }
+
+  edCtx.drawImage(editImg,dx,dy,dw,dh);
+}
+
+function setFit(btn,fit){
+  edFit=fit;
+  document.querySelectorAll('.fit-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  drawPreview();
+}
+
+function setRatio(btn,r){
+  const parts=r.split('/');
+  edRatioW=parseInt(parts[0]); edRatioH=parseInt(parts[1]);
+  document.querySelectorAll('.ratio-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  setupCanvas(); drawPreview();
+}
+
+function setBgColor(c,el){
+  edBg=c;
+  document.querySelectorAll('.color-swatch[data-color]').forEach(s=>s.classList.remove('active'));
+  if(el) el.classList.add('active');
+  drawPreview();
+}
+
+// Slider listeners
+['zoom','posx','posy'].forEach(k=>{
+  document.getElementById(k+'-slider').addEventListener('input',function(){
+    const v=parseInt(this.value);
+    if(k==='zoom'){ edZoom=v; document.getElementById('zoom-val').textContent=v+'%'; }
+    if(k==='posx'){ edPosX=v; document.getElementById('posx-val').textContent=v; }
+    if(k==='posy'){ edPosY=v; document.getElementById('posy-val').textContent=v; }
+    drawPreview();
+  });
+});
+
+function resetEditor(){
+  edFit='cover'; edZoom=100; edPosX=0; edPosY=0; edBg='#000000';
+  syncEditorUI(); drawPreview();
+}
+
+function applyEdit(){
+  if(editIdx<0||!editImg) return;
+  // Render to a full-res export canvas (1920×1080 or fit to image)
+  const exportW=1920, exportH=1080;
+  const expCanvas=document.createElement('canvas');
+  expCanvas.width=exportW; expCanvas.height=exportH;
+  const expCtx=expCanvas.getContext('2d');
+  const iW=editImg.naturalWidth, iH=editImg.naturalHeight;
+  const zoom=edZoom/100;
+  const offX=(edPosX/100)*exportW;
+  const offY=(edPosY/100)*exportH;
+
+  expCtx.fillStyle=edBg;
+  expCtx.fillRect(0,0,exportW,exportH);
+
+  let dw,dh,dx,dy;
+  if(edFit==='stretch'){
+    dw=exportW*zoom; dh=exportH*zoom;
+    dx=(exportW-dw)/2+offX; dy=(exportH-dh)/2+offY;
+  } else if(edFit==='contain'){
+    const scale=Math.min(exportW/iW, exportH/iH)*zoom;
+    dw=iW*scale; dh=iH*scale;
+    dx=(exportW-dw)/2+offX; dy=(exportH-dh)/2+offY;
+  } else if(edFit==='original'){
+    dw=iW*zoom; dh=iH*zoom;
+    dx=(exportW-dw)/2+offX; dy=(exportH-dh)/2+offY;
+  } else {
+    const scale=Math.max(exportW/iW, exportH/iH)*zoom;
+    dw=iW*scale; dh=iH*scale;
+    dx=(exportW-dw)/2+offX; dy=(exportH-dh)/2+offY;
+  }
+  expCtx.drawImage(editImg,dx,dy,dw,dh);
+
+  const exportSrc=expCanvas.toDataURL('image/jpeg',0.92);
+  images[editIdx]={
+    ...images[editIdx],
+    edited:true, fitMode:edFit, zoom:edZoom,
+    posX:edPosX, posY:edPosY, bgColor:edBg, exportSrc
+  };
+  saveImages(); renderThumbs();
+  closeEditor();
+  toast(t('toastApplied'));
+}
+
+// ════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
